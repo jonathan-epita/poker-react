@@ -28,4 +28,4 @@ One vocabulary for humans and agents. `_Avoid_` lists are binding: code identifi
 
 ## Banked, not shipped
 
-Sound effects (WebAudio) · multi-hand / tournament modes · streak persistence (violates one-shot) · PWA/i18n · Playwright E2E. Deferred designs live here or in ADRs — never as empty folders or stubs.
+Multi-hand / tournament modes · streak persistence (violates one-shot) · PWA/i18n. Sound effects and Playwright E2E were un-banked as phases 11 and 12. Deferred designs live here or in ADRs — never as empty folders or stubs.

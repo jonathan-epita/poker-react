@@ -36,19 +36,22 @@ This document is the entry point for every agent session. Read it, then read the
 
 Each phase = ONE functionality, checkable by a human in the browser (or terminal for phases 8–9). Execute strictly in order.
 
-| #   | Phase                                | Browser check                                                              |
-| --- | ------------------------------------ | -------------------------------------------------------------------------- |
-| 01  | Scaffold + toolchain                 | Styled empty casino table shell renders at `npm run dev`                   |
-| 02  | Card engine + static card rendering  | Five beautifully styled cards on the felt (hard-coded hand)                |
-| 03  | Deal + New Hand                      | Deal button produces 5 random cards; New Hand re-deals                     |
-| 04  | Hand evaluation + paytable panel     | Hand-name badge + paytable with winning row highlighted                    |
-| 05  | Hold & Draw                          | Full single-hand cycle: deal → hold → draw → evaluate                      |
-| 06  | Credits, betting, payouts, game over | Economy works end-to-end incl. New Session                                 |
-| 07  | Animation & polish                   | Deal stagger, card flip, win glow, responsive layout                       |
-| 08  | CI + GitHub Pages deploy             | Live site at the Pages URL, ci.yml green on PR                             |
-| 09  | Docs finalization + bootstrap report | README/CONTRIBUTING/BOOTSTRAP-REPORT complete, checklist §Validation green |
+| #   | Phase                                    | Browser check                                                              |
+| --- | ---------------------------------------- | -------------------------------------------------------------------------- |
+| 01  | Scaffold + toolchain                     | Styled empty casino table shell renders at `npm run dev`                   |
+| 02  | Card engine + static card rendering      | Five beautifully styled cards on the felt (hard-coded hand)                |
+| 03  | Deal + New Hand                          | Deal button produces 5 random cards; New Hand re-deals                     |
+| 04  | Hand evaluation + paytable panel         | Hand-name badge + paytable with winning row highlighted                    |
+| 05  | Hold & Draw                              | Full single-hand cycle: deal → hold → draw → evaluate                      |
+| 06  | Credits, betting, payouts, game over     | Economy works end-to-end incl. New Session                                 |
+| 07  | Animation & polish                       | Deal stagger, card flip, win glow, responsive layout                       |
+| 08  | CI + GitHub Pages deploy                 | Live site at the Pages URL, ci.yml green on PR                             |
+| 09  | Docs finalization + bootstrap report     | README/CONTRIBUTING/BOOTSTRAP-REPORT complete, checklist §Validation green |
+| 10  | Session history rail (TECH-DEBT #3)      | Rail shows hands / best hand / net; reload wipes it                        |
+| 11  | Synthesized sound effects (TECH-DEBT #2) | Toggle sound on: DEAL/hold/DRAW/win/bust audible; zero assets              |
+| 12  | Playwright E2E smoke (TECH-DEBT #1)      | Third CI job drives the previewed build green                              |
 
-Phase files: `docs/phases/0N-*.md`. Each is self-contained — a fresh session needs nothing else except the repo itself.
+Phase files: `docs/phases/NN-*.md`. Each is self-contained — a fresh session needs nothing else except the repo itself. Phases 10–12 are the sanctioned un-banking of TECH-DEBT #3, #2, #1, in that order; they are optional for v1 and mandatory if the project continues.
 
 ## Context-clear protocol (REQUIRED, from the project owner)
 
@@ -73,7 +76,6 @@ To start the next phase, the user opens a **fresh session** and sends:
 
 ## Banked, not shipped (deliberately out of scope)
 
-- Sound effects (WebAudio click/flip/win) — ADR slot reserved, do not implement.
 - Multi-hand strategies, tournaments, localStorage streaks — conflicts with one-shot rule.
 - PWA shell, i18n — single language, no offline-install promise needed.
-- Playwright E2E — Vitest + testing-library covers the flow at lower cost.
+- ~~Sound effects~~, ~~Playwright E2E~~ — un-banked as phases 11 and 12 (see phase sequence); nothing else may un-bank itself.
