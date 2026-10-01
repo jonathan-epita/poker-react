@@ -1,4 +1,4 @@
-# PR gate: one job, default-deny permissions, SHA-pinned actions.
+# PR gate: single job, default-deny permissions, SHA-pinned actions.
 name: CI
 
 on:
