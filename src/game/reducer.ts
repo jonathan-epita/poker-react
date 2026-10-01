@@ -16,7 +16,7 @@
  */
 
 import { type Card, buildDeck, shuffle } from "../engine/cards";
-import { evaluate } from "../engine/evaluate";
+import { type HandRank, evaluate } from "../engine/evaluate";
 import { payoutFor } from "../engine/paytable";
 
 type GamePhase = "idle" | "dealt" | "settled";
@@ -33,6 +33,13 @@ export const BET_VALUES: readonly Bet[] = [1, 2, 3, 4, 5];
 /** Credits a Session starts with — and the only balance NEW SESSION gives. */
 const STARTING_CREDITS = 100;
 
+/** One settled Hand on the History ledger: its Rank, its Bet, its Payout. */
+export interface SettledHand {
+  rank: HandRank;
+  bet: Bet;
+  payout: number;
+}
+
 export interface GameState {
   phase: GamePhase;
   /** The Hand: five cards once dealt, empty while idle. */
@@ -47,6 +54,8 @@ export interface GameState {
   bet: Bet;
   /** Credits the last Settle added; 0 until a Hand pays. */
   lastPayout: number;
+  /** The Session History: one entry per settled Hand, in-memory only. */
+  history: SettledHand[];
 }
 
 export type GameAction =
@@ -76,6 +85,7 @@ export function initialState(): GameState {
     credits: STARTING_CREDITS,
     bet: 1,
     lastPayout: 0,
+    history: [],
   };
 }
 
@@ -85,6 +95,31 @@ export function initialState(): GameState {
  */
 export function isGameOver(state: GameState): boolean {
   return state.phase === "settled" && state.credits < 1;
+}
+
+/** The derived Session readout: hands played, best Rank seen, net credits. */
+export interface SessionStats {
+  hands: number;
+  /** The best (enum-lowest) Rank settled so far; null while History is empty. */
+  best: HandRank | null;
+  /** Σ payout − Σ bet over the History, signed. */
+  net: number;
+}
+
+/**
+ * Session statistics, DERIVED from the History and never stored: `hands` is
+ * the ledger's length, `best` the lowest `HandRank` seen (the enum is ordered
+ * best-first), `net` the signed balance of payouts over bets. The UI renders
+ * History only through this selector.
+ */
+export function sessionStats(state: GameState): SessionStats {
+  let best: HandRank | null = null;
+  let net = 0;
+  for (const settled of state.history) {
+    if (best === null || settled.rank < best) best = settled.rank;
+    net += settled.payout - settled.bet;
+  }
+  return { hands: state.history.length, best, net };
 }
 
 /**
@@ -132,30 +167,37 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // The single Draw: held cards keep their slots, every unheld slot
       // takes the next reserved replacement in order. The final Hand settles:
       // payout = Paytable × bet, credited AFTER the Deal's deduction, so a
-      // no-payout Hand is a net loss of the Bet.
+      // no-payout Hand is a net loss of the Bet. The Settle also writes one
+      // line to the Session History — the ledger's only home.
       if (state.phase !== "dealt") return state;
       let next = 0;
       const hand = state.hand.map((card, i) =>
         state.held[i] ? card : state.deck[next++],
       );
-      const lastPayout = payoutFor(evaluate(hand).rank, state.bet);
+      const { rank } = evaluate(hand);
+      const lastPayout = payoutFor(rank, state.bet);
       return {
         ...state,
         phase: "settled",
         hand,
         lastPayout,
         credits: state.credits + lastPayout,
+        history: [
+          ...state.history,
+          { rank, bet: state.bet, payout: lastPayout },
+        ],
       };
     }
     case "NEW_HAND":
       // Back to a fresh idle machine — held and the payout banner reset, but
-      // the Session's credits and chosen bet carry over. Legal once a Hand
-      // is felt.
+      // the Session's credits, chosen bet and History carry over. Legal once
+      // a Hand is felt.
       if (state.phase === "idle") return state;
       return {
         ...initialState(),
         credits: state.credits,
         bet: state.bet,
+        history: state.history,
       };
     case "NEW_SESSION":
       // The only exit from a busted Session: exactly a fresh 100-credit one.

@@ -111,6 +111,38 @@ describe("App", () => {
   });
 });
 
+describe("the History rail", () => {
+  it("is absent on an idle machine — an untouched Session shows no zeros", () => {
+    render(<App />);
+
+    expect(screen.queryByTestId("history-rail")).toBeNull();
+  });
+
+  it("reads hands 1, the settled Rank and net +4 after one paying Hand at bet 2", async () => {
+    const user = userEvent.setup();
+    // Seed 43 deals a by-hand Three of a Kind; holding all five stands pat,
+    // so the Settle pays 3 × bet 2 = 6 against a stake of 2.
+    render(<App rng={lcg(43)} />);
+
+    await user.click(screen.getByRole("button", { name: "BET 2" }));
+    await user.click(screen.getByRole("button", { name: "DEAL" }));
+    for (const card of screen.getAllByRole("button", { pressed: false })) {
+      await user.click(card);
+    }
+    await user.click(screen.getByRole("button", { name: "DRAW" }));
+
+    const rail = within(screen.getByTestId("history-rail"));
+    expect(rail.getByText("1")).toBeInTheDocument();
+    expect(rail.getByText("Three of a Kind")).toBeInTheDocument();
+    expect(rail.getByText("+4")).toBeInTheDocument();
+
+    // The ledger rides the Session, not the Hand: NEW HAND keeps the line.
+    await user.click(screen.getByRole("button", { name: "NEW HAND" }));
+
+    expect(screen.getByTestId("history-rail")).toHaveTextContent("1");
+  });
+});
+
 describe("the economy", () => {
   it("opens with 100 credits, bet 1 lit, and the paytable at 1×", () => {
     render(<App />);
@@ -162,6 +194,8 @@ describe("the economy", () => {
       expect(screen.queryByTestId("game-over-overlay")).toBeNull();
       await user.click(screen.getByRole("button", { name: "NEW HAND" }));
     }
+    // The rail has kept the ledger all along: nineteen settled Hands, net −95.
+    expect(screen.getByTestId("history-rail")).toHaveTextContent(/19/);
     expect(credits()).toHaveTextContent("5");
 
     // The twentieth hand: Deal drains the last 5, the silent Draw settles at 0.
@@ -172,6 +206,8 @@ describe("the economy", () => {
 
     const overlay = screen.getByTestId("game-over-overlay");
     expect(within(overlay).getByText("GAME OVER")).toBeInTheDocument();
+    // Game over: the overlay owns the felt and the rail steps back.
+    expect(screen.queryByTestId("history-rail")).toBeNull();
     const actions = screen.getAllByRole("button");
     expect(actions).toHaveLength(1);
     expect(actions[0]).toHaveAccessibleName("NEW SESSION");
@@ -179,6 +215,8 @@ describe("the economy", () => {
     await user.click(actions[0]);
 
     expect(screen.queryByTestId("game-over-overlay")).toBeNull();
+    // NEW SESSION wipes the ledger with the Session: the rail is gone.
+    expect(screen.queryByTestId("history-rail")).toBeNull();
     expect(credits()).toHaveTextContent("100");
     expect(screen.getByRole("button", { name: "BET 1" })).toHaveAttribute(
       "aria-current",

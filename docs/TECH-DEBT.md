@@ -18,13 +18,13 @@ Honest ledger of what this project carries on purpose. Each entry: problem, impa
 - **Potential solution:** `engine`-adjacent `src/audio.ts` with an injectable `play(event)` seam (same pattern as the rng), default no-op; wired at the same dispatch points the animations use.
 - **Priority:** Low. First candidate if a phase 10 ever exists. **Planned: phase 11** (the phase 10/11 numbering honors this entry's standing offer).
 
-## 3. No bet-history / stats UI
+## 3. No bet-history / stats UI — Resolved by phase 10
 
 - **Problem:** After a Session, players cannot see hands played, best hand, or net — the ledger lives nowhere.
 - **Impact:** No long-term engagement hook; no way to verify "the paytable is fair" from inside the machine.
 - **Reason:** The one-shot promise forbids persistence; a transient in-memory history is possible but was never scoped — every phase file checked, none owns it.
-- **Potential solution:** A `history: Payout[]` field in the reducer (still zero-persistence: reload wipes it) rendered as a thin rail counter. Machine rules unchanged.
-- **Priority:** Medium — the only debt item a future phase would plausibly take. **Planned: phase 10** (first, per this line).
+- **Resolution:** Phase 10 shipped it — `history: SettledHand[]` in the reducer (still zero-persistence: reload or NEW SESSION wipes it), the derived `sessionStats` selector, and a thin one-line History rail beside CREDITS. Machine rules unchanged.
+- **Priority:** Resolved by phase 10.
 
 ## 4. Animations are CSS keyframes only
 
