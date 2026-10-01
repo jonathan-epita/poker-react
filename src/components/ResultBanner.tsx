@@ -1,8 +1,10 @@
 /**
  * The settled ResultBanner: replaces the informational Badge once the Hand
- * settles. A paying Hand reads `RESULT — {label} · +{payout}` and glows gold;
- * a silent one reads `{label} · no payout` and stays dim. The caption keeps
- * the banked rule visible: only the final Hand pays.
+ * settles. A paying Hand reads `RESULT — {label} · +{payout}` and glows gold
+ * twice before resting; a silent one reads `{label} · no payout` and stays
+ * dim. The banner is a polite live region, so screen readers announce the
+ * Settle without stealing focus. The caption keeps the banked rule visible:
+ * only the final Hand pays.
  */
 
 interface ResultBannerProps {
@@ -17,10 +19,12 @@ export default function ResultBanner({ label, payout }: ResultBannerProps) {
   return (
     <div className="flex flex-col items-center gap-1">
       <span
+        aria-live="polite"
         data-testid="result-banner"
-        className={`rounded-full px-6 py-1.5 font-serif text-lg font-bold tracking-[0.2em] uppercase ${
+        role="status"
+        className={`rounded-full px-4 py-1 font-serif text-base font-bold tracking-[0.2em] uppercase sm:px-6 sm:py-1.5 sm:text-lg ${
           won
-            ? "bg-gold/15 text-gold shadow-[0_0_22px_-2px_rgb(217_164_65/0.8)] ring-1 ring-gold"
+            ? "animate-glow bg-gold/15 text-gold shadow-[0_0_22px_-2px_rgb(217_164_65/0.8)] ring-1 ring-gold"
             : "text-cream/50 ring-1 ring-cream/15"
         }`}
       >

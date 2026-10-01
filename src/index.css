@@ -7,4 +7,75 @@
   --color-rail: #1a1410;
   --color-gold: #d9a441;
   --color-cream: #faf6ee;
+
+  /* Machine animations — CSS keyframes only, no animation library.
+   * Each is finite by design: the Settle glow rests after two cycles. */
+  --animate-deal-in: deal-in 400ms ease-out both;
+  --animate-flip: flip 300ms ease-in-out;
+  --animate-glow: glow 800ms ease-in-out 2;
+  --animate-hold-drop: hold-drop 200ms ease-out;
+
+  @keyframes deal-in {
+    from {
+      opacity: 0;
+      transform: translateY(1.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes flip {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+
+  @keyframes glow {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgb(217 164 65 / 0);
+    }
+    50% {
+      box-shadow:
+        0 0 26px 4px rgb(217 164 65 / 0.8),
+        0 0 8px 1px rgb(217 164 65 / 0.6);
+    }
+  }
+
+  @keyframes hold-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-0.5rem);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* One gold focus ring for every interactive element of the machine. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+}
+
+/* prefers-reduced-motion: the machine keeps working, nothing moves. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
+  }
 }

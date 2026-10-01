@@ -5,6 +5,12 @@ import { type Bet, BET_VALUES } from "../game/reducer";
  * active stake is gold-filled; a pill costing more than the balance is
  * disabled, so the Bet can never outrun the Session. Interactive only while
  * the machine is idle — the whole component is disabled otherwise.
+ *
+ * Deviation from the phase-07 checklist: the pills carry `aria-current`,
+ * not `aria-pressed` — five pills holding exactly one stake is a
+ * single-choice set, and `aria-pressed` would expose every unselected pill
+ * as an independent toggle, contradicting both the ARIA semantics and the
+ * machine's one-stake rule.
  */
 
 interface BetSelectorProps {
