@@ -8,7 +8,7 @@ Honest ledger of what this project carries on purpose. Each entry: problem, impa
 - **Impact:** A browser-only regression (CSS-only breakage, Pages base-path mistake, CSP violation) reaches `main` green. CI's build step catches asset-path issues; it cannot catch rendering ones.
 - **Reason:** Playwright was banked in the master plan — Vitest + testing-library covers the state-machine-heavy logic at a fraction of the cost for a 3-phase game.
 - **Potential solution:** `@playwright/test` smoke spec (deal → hold → draw → settle) against `preview`, headless chromium only, as a third CI job.
-- **Priority:** Low while the feature set is frozen; High the day anything about layout or the CSP changes.
+- **Priority:** Low while the feature set is frozen; High the day anything about layout or the CSP changes. **Planned: phase 12.**
 
 ## 2. Sound effects banked, not shipped
 
@@ -16,7 +16,7 @@ Honest ledger of what this project carries on purpose. Each entry: problem, impa
 - **Impact:** Purely experiential; zero functional cost.
 - **Reason:** Banked in the master plan — no external assets allowed and a WebAudio synth is a phase-sized task out of scope for 9 phases. ADR slot reserved, deliberately unfilled.
 - **Potential solution:** `engine`-adjacent `src/audio.ts` with an injectable `play(event)` seam (same pattern as the rng), default no-op; wired at the same dispatch points the animations use.
-- **Priority:** Low. First candidate if a phase 10 ever exists.
+- **Priority:** Low. First candidate if a phase 10 ever exists. **Planned: phase 11** (the phase 10/11 numbering honors this entry's standing offer).
 
 ## 3. No bet-history / stats UI
 
@@ -24,7 +24,7 @@ Honest ledger of what this project carries on purpose. Each entry: problem, impa
 - **Impact:** No long-term engagement hook; no way to verify "the paytable is fair" from inside the machine.
 - **Reason:** The one-shot promise forbids persistence; a transient in-memory history is possible but was never scoped — every phase file checked, none owns it.
 - **Potential solution:** A `history: Payout[]` field in the reducer (still zero-persistence: reload wipes it) rendered as a thin rail counter. Machine rules unchanged.
-- **Priority:** Medium — the only debt item a future phase would plausibly take.
+- **Priority:** Medium — the only debt item a future phase would plausibly take. **Planned: phase 10** (first, per this line).
 
 ## 4. Animations are CSS keyframes only
 
