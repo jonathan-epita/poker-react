@@ -41,9 +41,11 @@ export const RANK_LABEL: Record<
   2: "2",
 };
 
-const SUITS: readonly Suit[] = ["S", "H", "D", "C"];
+export const SUITS: readonly Suit[] = ["S", "H", "D", "C"];
 
-const RANKS: readonly Rank[] = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14];
+export const RANKS: readonly Rank[] = [
+  2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14,
+];
 
 /** The 52-card deck in a fixed, deterministic order (suit-major, rank-ascending). */
 export function buildDeck(): Card[] {
