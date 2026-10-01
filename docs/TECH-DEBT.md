@@ -10,13 +10,13 @@ Honest ledger of what this project carries on purpose. Each entry: problem, impa
 - **Potential solution:** `@playwright/test` smoke spec (deal → hold → draw → settle) against `preview`, headless chromium only, as a third CI job.
 - **Priority:** Low while the feature set is frozen; High the day anything about layout or the CSP changes. **Planned: phase 12.**
 
-## 2. Sound effects banked, not shipped
+## 2. Sound effects banked, not shipped — Resolved by phase 11
 
 - **Problem:** A video-poker machine without a click/flip/win sound is a silent slot.
 - **Impact:** Purely experiential; zero functional cost.
 - **Reason:** Banked in the master plan — no external assets allowed and a WebAudio synth is a phase-sized task out of scope for 9 phases. ADR slot reserved, deliberately unfilled.
-- **Potential solution:** `engine`-adjacent `src/audio.ts` with an injectable `play(event)` seam (same pattern as the rng), default no-op; wired at the same dispatch points the animations use.
-- **Priority:** Low. First candidate if a phase 10 ever exists. **Planned: phase 11** (the phase 10/11 numbering honors this entry's standing offer).
+- **Resolution:** Phase 11 shipped it — `src/audio.ts` synthesizes every cue (deal ticks, hold click, draw sweep, win arpeggio, bust thud) from oscillators and gain envelopes behind a `Sounder` seam mirroring the rng pattern: zero assets, zero dependencies, off by default behind one gold toggle. Wired at the same dispatch points the animations use; the Machine never knows about sound. Recorded in ADR-003.
+- **Priority:** Resolved by phase 11.
 
 ## 3. No bet-history / stats UI — Resolved by phase 10
 
