@@ -12,4 +12,12 @@ describe("App", () => {
     expect(heading).toHaveTextContent(/video poker/i);
     expect(heading).toHaveTextContent(/jacks or better/i);
   });
+
+  it("shows the display hand — a royal flush in spades — on the felt", () => {
+    render(<App />);
+
+    for (const rank of ["A", "K", "Q", "J", "10"]) {
+      expect(screen.getAllByText(rank).length).toBeGreaterThan(0);
+    }
+  });
 });

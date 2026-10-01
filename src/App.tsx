@@ -1,7 +1,20 @@
+import Card from "./components/Card";
+import type { Card as EngineCard } from "./engine/cards";
+
 /**
  * The casino table shell: a dark rail framing the felt, a gold masthead, a
- * version stamp. Cards, controls and state arrive in later phases.
+ * version stamp. For now the felt carries a hard-coded display hand; the
+ * dealt hand and machine state arrive in later phases.
  */
+
+const DISPLAY_HAND: readonly EngineCard[] = [
+  { rank: 14, suit: "S" },
+  { rank: 13, suit: "S" },
+  { rank: 12, suit: "S" },
+  { rank: 11, suit: "S" },
+  { rank: 10, suit: "S" },
+];
+
 export default function App() {
   return (
     <div className="flex h-dvh flex-col gap-5 overflow-hidden bg-rail p-4 text-cream sm:p-8">
@@ -19,7 +32,14 @@ export default function App() {
 
       {/* Rail: a bevelled frame that the felt sits inside. */}
       <div className="min-h-0 flex-1 rounded-[2.5rem] bg-rail p-2 shadow-[inset_0_1px_0_rgb(250_246_238/0.07),0_18px_50px_-12px_rgb(0_0_0/0.8)] ring-1 ring-gold/20 sm:p-3">
-        <div className="h-full w-full rounded-[2rem] bg-[radial-gradient(ellipse_at_center,var(--color-felt)_35%,var(--color-felt-deep)_100%)] shadow-[inset_0_0_120px_rgb(0_0_0/0.55),inset_0_0_0_1px_rgb(217_164_65/0.12)]" />
+        <div className="h-full w-full rounded-[2rem] bg-[radial-gradient(ellipse_at_center,var(--color-felt)_35%,var(--color-felt-deep)_100%)] shadow-[inset_0_0_120px_rgb(0_0_0/0.55),inset_0_0_0_1px_rgb(217_164_65/0.12)]">
+          {/* Hand area: the future home of the dealt Hand. */}
+          <div className="flex h-full w-full flex-wrap items-center justify-center gap-3 px-4 sm:gap-6">
+            {DISPLAY_HAND.map((card) => (
+              <Card key={`${card.rank}${card.suit}`} card={card} />
+            ))}
+          </div>
+        </div>
       </div>
 
       <footer className="shrink-0 text-center text-xs tracking-[0.25em] text-cream/40">
