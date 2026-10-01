@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+    "skipLibCheck": true,
+
+    /* Strict by default, flags the foundation demands */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+
+    /* Project-reference plumbing: build info in .tmp, nothing emitted */
+    "composite": true,
+    "tsBuildInfoFile": "node_modules/.tmp/ts/app.tsbuildinfo"
+  },
+  "include": ["src", "vitest.setup.ts"]
+}

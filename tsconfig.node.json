@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
+
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Config files are checked, not emitted: allow them into the program */
+    "allowJs": true,
+    "checkJs": false,
+
+    "composite": true,
+    "tsBuildInfoFile": "node_modules/.tmp/ts/node.tsbuildinfo"
+  },
+  "include": ["vite.config.ts", "eslint.config.js", "prettier.config.js"]
+}

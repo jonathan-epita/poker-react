@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* Design tokens — the casino palette. Everything visual hangs off these. */
+@theme {
+  --color-felt: #0c5c3f;
+  --color-felt-deep: #094a32;
+  --color-rail: #1a1410;
+  --color-gold: #d9a441;
+  --color-cream: #faf6ee;
+}
