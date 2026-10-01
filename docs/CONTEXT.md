@@ -24,7 +24,7 @@ One vocabulary for humans and agents. `_Avoid_` lists are binding: code identifi
 
 1. Payout depends **only** on the post-Draw hand; the post-Deal badge is informational. Deviation from casino Jacks-or-Better (where an initial winner auto-pays) — deliberate, see ADR-001.
 2. Exactly one Draw per Deal; all-5-held is legal and means "stand".
-3. Game over when `settled && credits < 1`; the only exit is NEW SESSION (restores 100, keeps chosen bet where possible).
+3. Game over when `settled && credits < 1`; the only exit is NEW SESSION — a pristine 100-credit, bet-1 Session, keeping nothing.
 
 ## Banked, not shipped
 

@@ -33,7 +33,7 @@ export const RANK_LABEL: Record<HandRank, string> = {
   [HandRank.HIGH_CARD]: "High Card",
 };
 
-export interface HandResult {
+interface HandResult {
   rank: HandRank;
   label: string;
 }
