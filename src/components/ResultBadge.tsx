@@ -1,7 +1,8 @@
 /**
  * The Badge: a gold-bordered pill naming the current Hand. Informational only
- * — payout comes from the post-Draw hand (phase 05) — so the caption under it
- * says what to do with it. Rendered only while a Hand is on the felt.
+ * — payout comes solely from the post-Draw hand (banked rule) — so the
+ * caption under it says what to do with it. Rendered only while a Hand is
+ * dealt but not yet settled.
  */
 
 interface ResultBadgeProps {

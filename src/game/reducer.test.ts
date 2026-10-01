@@ -1,13 +1,22 @@
 import { describe, expect, it } from "vitest";
 
-import { type Card, RANKS, SUITS, buildDeck, shuffle } from "../engine/cards";
+import {
+  buildDeck,
+  type Card,
+  type Rank,
+  RANKS,
+  shuffle,
+  type Suit,
+  SUITS,
+} from "../engine/cards";
 import { lcg } from "../engine/testing";
 import {
   DEAL_SIZE,
   type GameAction,
-  type GameState,
   gameReducer,
+  type GameState,
   initialState,
+  isGameOver,
 } from "./reducer";
 
 /**
@@ -35,13 +44,35 @@ function expectWellFormedCard(card: Card): void {
   expect(RANKS).toContain(card.rank);
 }
 
+function c(rank: Rank, suit: Suit): Card {
+  return { rank, suit };
+}
+
+/** Toggle every Hold on — a Draw that stands pat, keeping the dealt Hand. */
+function holdAll(state: GameState): GameState {
+  let next = state;
+  for (const index of [0, 1, 2, 3, 4] as const) {
+    next = gameReducer(next, { type: "TOGGLE_HOLD", index });
+  }
+  return next;
+}
+
+/** Deal a by-hand 10-card deck (5 Hand + 5 tail) at the given stake. */
+function dealAt(deck: readonly Card[], bet: 1 | 2 | 3 | 4 | 5): GameState {
+  const staked = gameReducer(initialState(), { type: "SET_BET", bet });
+  return gameReducer(staked, { type: "DEAL", deck: [...deck] });
+}
+
 describe("initialState", () => {
-  it("is idle with an empty hand, nothing held and no reserved tail", () => {
+  it("is idle with an empty hand, 100 credits, bet 1 and no payout", () => {
     expect(initialState()).toEqual({
       phase: "idle",
       hand: [],
       held: [false, false, false, false, false],
       deck: [],
+      credits: 100,
+      bet: 1,
+      lastPayout: 0,
     });
   });
 });
@@ -163,19 +194,25 @@ describe("DRAW", () => {
 });
 
 describe("NEW_HAND", () => {
-  it("transitions dealt → idle and clears hand, holds and tail", () => {
+  it("transitions dealt → idle, clearing hand and holds but keeping credits", () => {
     const dealt = gameReducer(dealtState(), { type: "TOGGLE_HOLD", index: 4 });
 
-    expect(gameReducer(dealt, { type: "NEW_HAND" })).toEqual(initialState());
+    const idle = gameReducer(dealt, { type: "NEW_HAND" });
+
+    expect(idle).toEqual({ ...initialState(), credits: 99, bet: 1 });
   });
 
-  it("transitions settled → idle — held resets with the machine", () => {
+  it("transitions settled → idle — the payout stays banked, the banner clears", () => {
     const dealt = gameReducer(dealtState(), { type: "TOGGLE_HOLD", index: 1 });
     const settled = gameReducer(dealt, { type: "DRAW" });
 
     const idle = gameReducer(settled, { type: "NEW_HAND" });
 
-    expect(idle).toEqual(initialState());
+    expect(idle).toEqual({
+      ...initialState(),
+      credits: settled.credits,
+      bet: settled.bet,
+    });
     expect(idle.held.every((held) => !held)).toBe(true);
   });
 
@@ -183,6 +220,156 @@ describe("NEW_HAND", () => {
     const idle = initialState();
 
     expect(gameReducer(idle, { type: "NEW_HAND" })).toBe(idle);
+  });
+});
+
+describe("SET_BET", () => {
+  it("changes the stake while idle, and the paytable-facing state agrees", () => {
+    const staked = gameReducer(initialState(), { type: "SET_BET", bet: 4 });
+
+    expect(staked.bet).toBe(4);
+    expect(staked.phase).toBe("idle");
+    expect(staked.credits).toBe(100);
+  });
+
+  it("clamps to the balance: at 2 credits, 2 is the maximum stake", () => {
+    const poor = { ...initialState(), credits: 2 };
+
+    expect(gameReducer(poor, { type: "SET_BET", bet: 2 }).bet).toBe(2);
+    for (const bet of [3, 4, 5] as const) {
+      expect(gameReducer(poor, { type: "SET_BET", bet })).toBe(poor);
+    }
+  });
+
+  it("is illegal once a Hand is dealt or settled — state returned unchanged", () => {
+    const dealt = dealtState();
+    const settled = settledState();
+
+    expect(gameReducer(dealt, { type: "SET_BET", bet: 5 })).toBe(dealt);
+    expect(gameReducer(settled, { type: "SET_BET", bet: 5 })).toBe(settled);
+  });
+});
+
+describe("the economy", () => {
+  it("DEAL deducts exactly the bet", () => {
+    const dealt = dealAt(seededDeck(11), 3);
+
+    expect(dealt.credits).toBe(97);
+    expect(dealt.lastPayout).toBe(0);
+  });
+
+  it("DEAL is blocked once the Session cannot stake a single credit", () => {
+    const broke = { ...initialState(), credits: 0 };
+
+    expect(gameReducer(broke, { type: "DEAL", deck: seededDeck(5) })).toBe(
+      broke,
+    );
+  });
+
+  it("DRAW pays the final Hand × bet: a pair of kings at stake 3 pays 3", () => {
+    // By-hand 10-card deck — five-card Kings hand, five-card filler tail —
+    // doubling as an integration test of evaluate × PAYTABLE.
+    const kings = [
+      c(13, "S"),
+      c(13, "H"),
+      c(7, "D"),
+      c(4, "C"),
+      c(9, "H"),
+      c(12, "S"),
+      c(11, "D"),
+      c(10, "S"),
+      c(6, "C"),
+      c(3, "D"),
+    ];
+
+    const settled = gameReducer(holdAll(dealAt(kings, 3)), { type: "DRAW" });
+
+    expect(settled.phase).toBe("settled");
+    expect(settled.lastPayout).toBe(3); // JACKS_OR_BETTER (1) × bet 3
+    expect(settled.credits).toBe(100); // 100 − 3 dealt + 3 paid
+  });
+
+  it("DRAW pays a royal 250 × bet: 98 staked, 598 after", () => {
+    const royal = [
+      c(10, "S"),
+      c(11, "S"),
+      c(12, "S"),
+      c(13, "S"),
+      c(14, "S"),
+      c(9, "H"),
+      c(8, "D"),
+      c(7, "C"),
+      c(5, "S"),
+      c(3, "H"),
+    ];
+
+    const settled = gameReducer(holdAll(dealAt(royal, 2)), { type: "DRAW" });
+
+    expect(settled.lastPayout).toBe(500); // ROYAL_FLUSH (250) × bet 2
+    expect(settled.credits).toBe(598);
+  });
+
+  it("a no-payout Hand is a net loss of the bet", () => {
+    const bust = [
+      c(3, "S"),
+      c(7, "H"),
+      c(11, "D"),
+      c(4, "C"),
+      c(9, "S"),
+      c(2, "H"),
+      c(5, "D"),
+      c(6, "C"),
+      c(8, "S"),
+      c(10, "H"),
+    ];
+
+    const settled = gameReducer(holdAll(dealAt(bust, 3)), { type: "DRAW" });
+
+    expect(settled.lastPayout).toBe(0);
+    expect(settled.credits).toBe(97);
+  });
+
+  it("NEW_SESSION resets to exactly 100 credits and bet 1, keeping nothing", () => {
+    const kings = dealAt(
+      [
+        c(13, "S"),
+        c(13, "H"),
+        c(7, "D"),
+        c(4, "C"),
+        c(9, "H"),
+        c(12, "S"),
+        c(11, "D"),
+        c(10, "S"),
+        c(6, "C"),
+        c(3, "D"),
+      ],
+      5,
+    );
+    const settled = gameReducer(holdAll(kings), { type: "DRAW" });
+
+    expect(gameReducer(settled, { type: "NEW_SESSION" })).toEqual(
+      initialState(),
+    );
+  });
+});
+
+describe("isGameOver (derived)", () => {
+  it("is false while idle and while dealt, whatever the balance", () => {
+    expect(isGameOver(initialState())).toBe(false);
+    expect(isGameOver({ ...dealtState(), credits: 0 })).toBe(false);
+  });
+
+  it("is true only for a settled Hand below one credit", () => {
+    expect(isGameOver({ ...settledState(), credits: 4 })).toBe(false);
+    expect(isGameOver({ ...settledState(), credits: 1 })).toBe(false);
+    expect(isGameOver({ ...settledState(), credits: 0 })).toBe(true);
+  });
+
+  it("is never stored on the state", () => {
+    const settled = { ...settledState(), credits: 0 };
+
+    expect(settled).not.toHaveProperty("gameOver");
+    expect(isGameOver(settled)).toBe(true);
   });
 });
 
