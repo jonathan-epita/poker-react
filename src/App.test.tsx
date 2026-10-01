@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import App from "./App";
 import { lcg } from "./engine/testing";
@@ -223,6 +223,86 @@ describe("the economy", () => {
       "true",
     );
     expect(screen.getByRole("button", { name: "DEAL" })).toBeInTheDocument();
+  });
+});
+
+describe("the sound seam", () => {
+  it("stays silent while sound is off: the sounder is never called", async () => {
+    const user = userEvent.setup();
+    const sounder = vi.fn();
+    render(<App sounder={sounder} />);
+
+    await user.click(screen.getByRole("button", { name: "DEAL" }));
+    await user.click(screen.getAllByRole("button", { pressed: false })[0]);
+    await user.click(screen.getByRole("button", { name: "DRAW" }));
+
+    expect(sounder).not.toHaveBeenCalled();
+  });
+
+  it("sounds one paying Hand end to end: deal, five holds, draw, win", async () => {
+    const user = userEvent.setup();
+    const sounder = vi.fn();
+    // Seed 43 pays a Three of a Kind standing pat — same seed as History.
+    render(<App rng={lcg(43)} sounder={sounder} />);
+
+    await user.click(screen.getByRole("button", { name: "Sound" }));
+    expect(sounder).not.toHaveBeenCalled(); // the toggle itself is silent
+    await user.click(screen.getByRole("button", { name: "BET 2" }));
+    await user.click(screen.getByRole("button", { name: "DEAL" }));
+    for (const card of screen.getAllByRole("button", { pressed: false })) {
+      await user.click(card);
+    }
+    await user.click(screen.getByRole("button", { name: "DRAW" }));
+
+    expect(sounder.mock.calls).toEqual([
+      ["deal"],
+      ["hold"],
+      ["hold"],
+      ["hold"],
+      ["hold"],
+      ["hold"],
+      ["draw"],
+      ["win"],
+    ]);
+  });
+
+  it("sends neither win nor bust on a non-paying Settle", async () => {
+    const user = userEvent.setup();
+    const sounder = vi.fn();
+    // Seed 17's first Hand at bet 5 loses outright — a silent Settle.
+    render(<App rng={lcg(17)} sounder={sounder} />);
+
+    await user.click(screen.getByRole("button", { name: "Sound" }));
+    await user.click(screen.getByRole("button", { name: "BET 5" }));
+    await user.click(screen.getByRole("button", { name: "DEAL" }));
+    await user.click(screen.getByRole("button", { name: "DRAW" }));
+
+    const cues = sounder.mock.calls.flat();
+    expect(cues).toContain("deal"); // the seam is live…
+    expect(cues).toContain("draw");
+    expect(cues).not.toContain("win");
+    expect(cues).not.toContain("bust"); // …but a silent Settle stays silent
+  });
+
+  it("thuds bust under the game-over overlay", async () => {
+    const user = userEvent.setup();
+    const sounder = vi.fn();
+    // Seed 17 at bet 5: twenty losing hands in a row, then bust — the same
+    // route as the economy test.
+    render(<App rng={lcg(17)} sounder={sounder} />);
+
+    await user.click(screen.getByRole("button", { name: "Sound" }));
+    await user.click(screen.getByRole("button", { name: "BET 5" }));
+    for (let hand = 1; hand <= 19; hand++) {
+      await user.click(screen.getByRole("button", { name: "DEAL" }));
+      await user.click(screen.getByRole("button", { name: "DRAW" }));
+      await user.click(screen.getByRole("button", { name: "NEW HAND" }));
+    }
+    await user.click(screen.getByRole("button", { name: "DEAL" }));
+    await user.click(screen.getByRole("button", { name: "DRAW" }));
+
+    expect(screen.getByTestId("game-over-overlay")).toBeInTheDocument();
+    expect(sounder).toHaveBeenCalledWith("bust");
   });
 });
 

@@ -78,4 +78,4 @@ To start the next phase, the user opens a **fresh session** and sends:
 
 - Multi-hand strategies, tournaments, localStorage streaks — conflicts with one-shot rule.
 - PWA shell, i18n — single language, no offline-install promise needed.
-- ~~Sound effects~~, ~~Playwright E2E~~ — un-banked as phases 11 and 12 (see phase sequence); nothing else may un-bank itself.
+- ~~Sound effects~~ — un-banked and shipped as phase 11; ~~Playwright E2E~~ — un-banked as phase 12 (see phase sequence); nothing else may un-bank itself.

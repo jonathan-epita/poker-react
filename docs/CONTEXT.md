@@ -20,6 +20,7 @@ One vocabulary for humans and agents. `_Avoid_` lists are binding: code identifi
 | **Felt / Rail** | The green play surface / its dark wooden frame                           | table, board, background                        |
 | **Machine**     | The whole app pretending to be a video-poker machine                     | simulator, client                               |
 | **One-shot**    | Zero persistence by design; reload or NEW SESSION = fresh 100 credits    | free-play, demo mode                            |
+| **Cue**         | One synthesized sound at the UI seam: deal, hold, draw, win, bust        | sound, effect, sfx, noise                       |
 
 ## Machine rules (domain law, one place)
 
@@ -29,4 +30,4 @@ One vocabulary for humans and agents. `_Avoid_` lists are binding: code identifi
 
 ## Banked, not shipped
 
-Multi-hand / tournament modes · streak persistence (violates one-shot) · PWA/i18n. Sound effects and Playwright E2E were un-banked as phases 11 and 12. Deferred designs live here or in ADRs — never as empty folders or stubs.
+Multi-hand / tournament modes · streak persistence (violates one-shot) · PWA/i18n. Sound effects shipped in phase 11; Playwright E2E was un-banked as phase 12. Deferred designs live here or in ADRs — never as empty folders or stubs.
