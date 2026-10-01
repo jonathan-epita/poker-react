@@ -1,5 +1,8 @@
 import { useReducer } from "react";
 import Card from "./components/Card";
+import Paytable from "./components/Paytable";
+import ResultBadge from "./components/ResultBadge";
+import { evaluate } from "./engine/evaluate";
 import { HAND_SIZE, gameReducer, initialState } from "./game/reducer";
 
 /**
@@ -18,6 +21,8 @@ const SLOT_FRAME =
 export default function App() {
   const [state, dispatch] = useReducer(gameReducer, undefined, initialState);
   const idle = state.phase === "idle";
+  // Derivation, not state: the Rank is computed at render, never stored.
+  const result = state.hand.length === HAND_SIZE ? evaluate(state.hand) : null;
 
   return (
     <div className="flex h-dvh flex-col gap-5 overflow-hidden bg-rail p-4 text-cream sm:p-8">
@@ -35,22 +40,28 @@ export default function App() {
 
       {/* Rail: a bevelled frame that the felt sits inside. */}
       <div className="min-h-0 flex-1 rounded-[2.5rem] bg-rail p-2 shadow-[inset_0_1px_0_rgb(250_246_238/0.07),0_18px_50px_-12px_rgb(0_0_0/0.8)] ring-1 ring-gold/20 sm:p-3">
-        <div className="h-full w-full rounded-[2rem] bg-[radial-gradient(ellipse_at_center,var(--color-felt)_35%,var(--color-felt-deep)_100%)] shadow-[inset_0_0_120px_rgb(0_0_0/0.55),inset_0_0_0_1px_rgb(217_164_65/0.12)]">
-          {/* Hand area: the dealt Hand, or five empty slots while idle. */}
-          <div className="flex h-full w-full flex-wrap items-center justify-center gap-3 px-4 sm:gap-6">
-            {idle
-              ? Array.from({ length: HAND_SIZE }, (_, position) => (
-                  <div
-                    aria-hidden="true"
-                    data-testid="empty-slot"
-                    key={position}
-                    className={SLOT_FRAME}
-                  />
-                ))
-              : state.hand.map((card, position) => (
-                  <Card key={position} card={card} />
-                ))}
+        <div className="flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden rounded-[2rem] bg-[radial-gradient(ellipse_at_center,var(--color-felt)_35%,var(--color-felt-deep)_100%)] p-4 shadow-[inset_0_0_120px_rgb(0_0_0/0.55),inset_0_0_0_1px_rgb(217_164_65/0.12)] lg:flex-row lg:gap-10 lg:p-8">
+          {/* Hand column: the Badge over the dealt Hand, or five empty slots. */}
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 sm:gap-6">
+            {result !== null && <ResultBadge label={result.label} />}
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
+              {idle
+                ? Array.from({ length: HAND_SIZE }, (_, position) => (
+                    <div
+                      aria-hidden="true"
+                      data-testid="empty-slot"
+                      key={position}
+                      className={SLOT_FRAME}
+                    />
+                  ))
+                : state.hand.map((card, position) => (
+                    <Card key={position} card={card} />
+                  ))}
+            </div>
           </div>
+
+          {/* Paytable: right of the Hand on desktop, below it on mobile. */}
+          <Paytable rank={result !== null ? result.rank : null} />
         </div>
       </div>
 
