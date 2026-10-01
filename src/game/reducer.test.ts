@@ -9,6 +9,7 @@ import {
   type Suit,
   SUITS,
 } from "../engine/cards";
+import { HandRank } from "../engine/evaluate";
 import { lcg } from "../engine/testing";
 import {
   DEAL_SIZE,
@@ -17,6 +18,8 @@ import {
   type GameState,
   initialState,
   isGameOver,
+  sessionStats,
+  type SettledHand,
 } from "./reducer";
 
 /**
@@ -64,7 +67,7 @@ function dealAt(deck: readonly Card[], bet: 1 | 2 | 3 | 4 | 5): GameState {
 }
 
 describe("initialState", () => {
-  it("is idle with an empty hand, 100 credits, bet 1 and no payout", () => {
+  it("is idle with an empty hand, 100 credits, bet 1, no payout, no History", () => {
     expect(initialState()).toEqual({
       phase: "idle",
       hand: [],
@@ -73,6 +76,7 @@ describe("initialState", () => {
       credits: 100,
       bet: 1,
       lastPayout: 0,
+      history: [],
     });
   });
 });
@@ -202,7 +206,7 @@ describe("NEW_HAND", () => {
     expect(idle).toEqual({ ...initialState(), credits: 99, bet: 1 });
   });
 
-  it("transitions settled → idle — the payout stays banked, the banner clears", () => {
+  it("transitions settled → idle — the payout stays banked, the banner clears, the History carries over", () => {
     const dealt = gameReducer(dealtState(), { type: "TOGGLE_HOLD", index: 1 });
     const settled = gameReducer(dealt, { type: "DRAW" });
 
@@ -212,6 +216,7 @@ describe("NEW_HAND", () => {
       ...initialState(),
       credits: settled.credits,
       bet: settled.bet,
+      history: settled.history,
     });
     expect(idle.held.every((held) => !held)).toBe(true);
   });
@@ -350,6 +355,140 @@ describe("the economy", () => {
     expect(gameReducer(settled, { type: "NEW_SESSION" })).toEqual(
       initialState(),
     );
+  });
+});
+
+/** Kings at any stake: a settled JACKS_OR_BETTER ledger entry. */
+const KINGS: Card[] = [
+  c(13, "S"),
+  c(13, "H"),
+  c(7, "D"),
+  c(4, "C"),
+  c(9, "H"),
+  c(12, "S"),
+  c(11, "D"),
+  c(10, "S"),
+  c(6, "C"),
+  c(3, "D"),
+];
+
+/** A by-hand High Card: the ledger still records a 0-payout Hand. */
+const BUST: Card[] = [
+  c(3, "S"),
+  c(7, "H"),
+  c(11, "D"),
+  c(4, "C"),
+  c(9, "S"),
+  c(2, "H"),
+  c(5, "D"),
+  c(6, "C"),
+  c(8, "S"),
+  c(10, "H"),
+];
+
+/** A Royal: the ledger's best-possible line, at whatever stake is carried. */
+const ROYAL: Card[] = [
+  c(10, "S"),
+  c(11, "S"),
+  c(12, "S"),
+  c(13, "S"),
+  c(14, "S"),
+  c(9, "H"),
+  c(8, "D"),
+  c(7, "C"),
+  c(5, "S"),
+  c(3, "H"),
+];
+
+describe("the History ledger", () => {
+  it("DRAW appends exactly one SettledHand: the settled rank, bet and payout", () => {
+    const settled = gameReducer(holdAll(dealAt(KINGS, 3)), { type: "DRAW" });
+
+    expect(settled.history).toEqual([
+      { rank: HandRank.JACKS_OR_BETTER, bet: 3, payout: 3 },
+    ]);
+  });
+
+  it("a silent Settle still writes a line — 0 pays but the Hand counts", () => {
+    const settled = gameReducer(holdAll(dealAt(BUST, 3)), { type: "DRAW" });
+
+    expect(settled.history).toEqual([
+      { rank: HandRank.HIGH_CARD, bet: 3, payout: 0 },
+    ]);
+  });
+
+  it("grows one entry per Hand and survives NEW HAND untouched", () => {
+    let state = gameReducer(holdAll(dealAt(KINGS, 3)), { type: "DRAW" });
+    state = gameReducer(state, { type: "NEW_HAND" });
+
+    expect(state.history).toHaveLength(1);
+
+    state = gameReducer(state, { type: "DEAL", deck: ROYAL });
+    state = gameReducer(holdAll(state), { type: "DRAW" });
+
+    expect(state.history).toHaveLength(2);
+    expect(state.history[1]).toEqual({
+      rank: HandRank.ROYAL_FLUSH,
+      bet: 3,
+      payout: 750,
+    });
+  });
+
+  it("is wiped by NEW SESSION along with the credits", () => {
+    const settled = gameReducer(holdAll(dealAt(KINGS, 3)), { type: "DRAW" });
+
+    expect(gameReducer(settled, { type: "NEW_SESSION" }).history).toEqual([]);
+  });
+
+  it("survives every illegal transition by identity — history included", () => {
+    const settled = gameReducer(holdAll(dealAt(KINGS, 3)), { type: "DRAW" });
+
+    expect(gameReducer(settled, { type: "DEAL", deck: seededDeck(99) })).toBe(
+      settled,
+    );
+    expect(gameReducer(settled, { type: "TOGGLE_HOLD", index: 0 })).toBe(
+      settled,
+    );
+    expect(gameReducer(settled, { type: "DRAW" })).toBe(settled);
+    expect(gameReducer(settled, { type: "SET_BET", bet: 5 })).toBe(settled);
+    // The one legal transition from settled carries the SAME array, not a copy.
+    expect(gameReducer(settled, { type: "NEW_HAND" }).history).toBe(
+      settled.history,
+    );
+  });
+});
+
+describe("sessionStats (derived)", () => {
+  it("reads 0 hands, null best and 0 net on an empty ledger", () => {
+    expect(sessionStats(initialState())).toEqual({
+      hands: 0,
+      best: null,
+      net: 0,
+    });
+  });
+
+  it("one settled Hand at bet 3 paying 3: hands 1, its Rank, net 0", () => {
+    const settled = gameReducer(holdAll(dealAt(KINGS, 3)), { type: "DRAW" });
+
+    expect(sessionStats(settled)).toEqual({
+      hands: 1,
+      best: HandRank.JACKS_OR_BETTER,
+      net: 0,
+    });
+  });
+
+  it("a mixed ledger: best is the enum-minimum Rank, net is signed", () => {
+    const history: SettledHand[] = [
+      { rank: HandRank.HIGH_CARD, bet: 2, payout: 0 },
+      { rank: HandRank.FLUSH, bet: 5, payout: 30 },
+      { rank: HandRank.FULL_HOUSE, bet: 1, payout: 9 },
+    ];
+
+    expect(sessionStats({ ...initialState(), history })).toEqual({
+      hands: 3,
+      best: HandRank.FULL_HOUSE,
+      net: 31,
+    });
   });
 });
 

@@ -2,6 +2,7 @@ import { useReducer, useState } from "react";
 import BetSelector from "./components/BetSelector";
 import Card from "./components/Card";
 import GameOverOverlay from "./components/GameOverOverlay";
+import HistoryRail from "./components/HistoryRail";
 import Paytable from "./components/Paytable";
 import ResultBadge from "./components/ResultBadge";
 import ResultBanner from "./components/ResultBanner";
@@ -15,11 +16,12 @@ import {
   HAND_SIZE,
   initialState,
   isGameOver,
+  sessionStats,
 } from "./game/reducer";
 
 /**
  * The casino table shell: a dark rail framing the felt, a gold masthead, a
- * credits-and-bet rail, a controls row, a version stamp. The machine state
+ * credits/History/bet rail, a controls row, a version stamp. The machine state
  * lives here in `useReducer` over the framework-free reducer; components
  * below stay presentational. The optional `rng` is the Deal's injectable
  * randomness — the production default is `Math.random`; tests seed it.
@@ -81,8 +83,10 @@ export default function App({ rng = Math.random }: AppProps) {
 
   return (
     <div className="flex h-dvh flex-col gap-4 overflow-hidden bg-rail p-4 text-cream sm:gap-5 sm:p-8">
-      {/* Top rail: masthead over a gold divider, then CREDITS left and the
-          BET selector right. */}
+      {/* Top rail: masthead over a gold divider, then CREDITS and the
+          History readout left, the BET selector right. The History group
+          shares a wrap-container with CREDITS so phones drop it below
+          rather than squeezing the BET pills. */}
       <header className="shrink-0 text-center">
         <h1 className="font-serif text-xl font-bold tracking-[0.2em] text-gold uppercase sm:text-4xl sm:tracking-[0.3em]">
           Video Poker
@@ -98,17 +102,20 @@ export default function App({ rng = Math.random }: AppProps) {
           className="mx-auto mt-2 h-px w-full bg-linear-to-r from-transparent via-gold/50 to-transparent"
         />
         <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <p className="flex items-baseline gap-2">
-            <span className="font-serif text-[0.7rem] font-bold tracking-[0.35em] text-gold uppercase">
-              Credits
-            </span>
-            <span
-              className="font-mono text-2xl font-bold text-gold tabular-nums"
-              data-testid="credits"
-            >
-              {state.credits}
-            </span>
-          </p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <p className="flex items-baseline gap-2">
+              <span className="font-serif text-[0.7rem] font-bold tracking-[0.35em] text-gold uppercase">
+                Credits
+              </span>
+              <span
+                className="font-mono text-2xl font-bold text-gold tabular-nums"
+                data-testid="credits"
+              >
+                {state.credits}
+              </span>
+            </p>
+            {!gameOver && <HistoryRail {...sessionStats(state)} />}
+          </div>
           {!gameOver && (
             <BetSelector
               bet={state.bet}
