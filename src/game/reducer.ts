@@ -19,7 +19,7 @@ import { type Card, buildDeck, shuffle } from "../engine/cards";
 import { evaluate } from "../engine/evaluate";
 import { payoutFor } from "../engine/paytable";
 
-export type GamePhase = "idle" | "dealt" | "settled";
+type GamePhase = "idle" | "dealt" | "settled";
 
 /** Positions in the Hand a Hold can target. */
 export type HoldIndex = 0 | 1 | 2 | 3 | 4;
@@ -31,7 +31,7 @@ export type Bet = 1 | 2 | 3 | 4 | 5;
 export const BET_VALUES: readonly Bet[] = [1, 2, 3, 4, 5];
 
 /** Credits a Session starts with — and the only balance NEW SESSION gives. */
-export const STARTING_CREDITS = 100;
+const STARTING_CREDITS = 100;
 
 export interface GameState {
   phase: GamePhase;
